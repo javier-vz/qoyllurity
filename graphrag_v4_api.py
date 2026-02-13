@@ -1,0 +1,342 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+GraphRAG v4.0 API - Versión Modular con Configuración Externa
+==============================================================
+
+Versión mejorada que usa:
+- Configuración externa (config_graphrag.py)
+- Prompts modulares
+- Mapeos de relaciones actualizados
+- Soporte completo para lugares sagrados
+"""
+
+import time
+from typing import List, Dict, Tuple
+from groq import Groq
+
+# Importar GraphRAG v2.0 como base
+from graphrag_v2 import GraphRAG_v2
+
+# Importar configuración
+from config_graphrag import (
+    SYSTEM_PROMPT,
+    USER_PROMPT_TEMPLATE,
+    mapear_relacion,
+    Config
+)
+
+
+class GraphRAG_v4_API(GraphRAG_v2):
+    """
+    GraphRAG v4.0 con Groq API
+    
+    Arquitectura híbrida:
+    - v2.0: Búsqueda local rápida (embeddings + BM25)
+    - API: Generación de lenguaje natural con Groq
+    
+    Características:
+    - Prompts externos configurables
+    - Mapeos de relaciones actualizados
+    - Soporte para lugares sagrados y jerarquía geográfica
+    """
+    
+    def __init__(
+        self,
+        ttl_path: str,
+        groq_api_key: str,
+        modelo: str = None,
+        verbose: bool = False
+    ):
+        """
+        Inicializa GraphRAG v4.0 API
+        
+        Args:
+            ttl_path: Ruta al archivo TTL
+            groq_api_key: API key de Groq
+            modelo: Modelo a usar (por defecto usa Config.MODELO_GROQ)
+            verbose: Mostrar mensajes de debug
+        """
+        # Inicializar GraphRAG v2.0 (herencia) - sin verbose
+        super().__init__(ttl_path)
+        
+        # Guardar verbose para uso posterior
+        self.verbose_mode = verbose
+        
+        # Configurar Groq client
+        self.client = Groq(api_key=groq_api_key)
+        self.groq_model = modelo or Config.MODELO_GROQ
+        
+        if verbose:
+            print("\n" + "=" * 70)
+            print("✅ Groq API configurada")
+            print(f"   Modelo: {self.groq_model}")
+            print(f"   Límite: 30 requests/min (gratis)")
+            print("=" * 70)
+            print()
+    
+    def construir_contexto(
+        self,
+        entidades_ids: List[str],
+        max_chars: int = None
+    ) -> str:
+        """
+        Construye contexto para la API usando configuración externa
+        
+        Args:
+            entidades_ids: IDs de entidades relevantes
+            max_chars: Límite de caracteres (usa Config si None)
+            
+        Returns:
+            Contexto formateado en lenguaje natural
+        """
+        max_chars = max_chars or Config.MAX_CHARS_CONTEXTO
+        partes = []
+        chars_usados = 0
+        
+        # Limitar a TOP_K_CONTEXTO entidades
+        for ent_id in entidades_ids[:Config.TOP_K_CONTEXTO]:
+            if chars_usados > max_chars:
+                break
+            
+            ent = self.entidades.get(ent_id, {})
+            if not ent:
+                continue
+            
+            # Extraer nombre con fallback seguro
+            labels = ent.get('labels', [])
+            nombre = labels[0] if labels else ent_id
+            
+            # Extraer descripción con fallback seguro
+            comments = ent.get('comments', [])
+            desc = comments[0] if comments else ""
+            
+            # Formatear info básica
+            info = f"• {nombre}"
+            if desc:
+                # Limitar descripción según Config
+                info += f"\n  {desc[:Config.MAX_CHARS_DESC]}"
+            
+            # Extraer relaciones en lenguaje natural
+            relaciones = ent.get('relaciones', {})
+            rels_naturales = []
+            
+            # Limitar según Config
+            for rel_tipo, objetos in list(relaciones.items())[:Config.MAX_RELACIONES]:
+                for obj_id in objetos[:Config.MAX_OBJETOS_POR_REL]:
+                    obj_ent = self.entidades.get(obj_id, {})
+                    if obj_ent:
+                        obj_labels = obj_ent.get('labels', [])
+                        obj_nombre = obj_labels[0] if obj_labels else obj_id
+                        
+                        # Usar función de mapeo de config_graphrag.py
+                        rel_natural = mapear_relacion(rel_tipo, obj_nombre)
+                        rels_naturales.append(rel_natural)
+            
+            # Agregar relaciones al info
+            if rels_naturales:
+                # Limitar a 3 relaciones mostradas
+                info += f"\n  {'; '.join(rels_naturales[:3])}"
+            
+            # Verificar si cabe en el límite
+            parte_len = len(info)
+            if chars_usados + parte_len < max_chars:
+                partes.append(info)
+                chars_usados += parte_len
+        
+        # Retornar contexto unido o mensaje de no encontrado
+        if not partes:
+            return "No se encontró información relevante en el grafo de conocimiento."
+        
+        return "\n\n".join(partes)
+    
+    def responder_con_api(
+        self,
+        pregunta: str,
+        modo: str = "hibrido",
+        verbose: bool = False
+    ) -> str:
+        """
+        Responde usando búsqueda local + Groq API
+        
+        Args:
+            pregunta: Pregunta del usuario
+            modo: Modo de búsqueda ('semantico', 'lexico', 'hibrido')
+            verbose: Mostrar info de debug
+            
+        Returns:
+            Respuesta generada por el LLM
+        """
+        if verbose:
+            print(f"\n{'='*70}")
+            print(f"🔍 Procesando: '{pregunta}'")
+            print(f"{'='*70}")
+        
+        # ====================================================================
+        # FASE 1: BÚSQUEDA LOCAL (GraphRAG v2.0)
+        # ====================================================================
+        if verbose:
+            print("\n📊 Fase 1: Búsqueda local (v2.0)")
+        
+        start_busqueda = time.time()
+        
+        # Seleccionar modo de búsqueda
+        if modo == "semantico":
+            resultados = self.buscar_semantico(pregunta, top_k=Config.TOP_K_BUSQUEDA)
+        elif modo == "lexico":
+            resultados = self.buscar_lexico(pregunta, top_k=Config.TOP_K_BUSQUEDA)
+        else:
+            resultados = self.buscar_hibrido(pregunta, top_k=Config.TOP_K_BUSQUEDA)
+        
+        t_busqueda = time.time() - start_busqueda
+        
+        if not resultados:
+            return "No encontré información relacionada en el grafo."
+        
+        # Extraer IDs de las top entidades
+        entidades_ids = [ent_id for ent_id, _ in resultados[:Config.TOP_K_CONTEXTO]]
+        
+        if verbose:
+            print(f"   ✅ {len(resultados)} entidades en {t_busqueda*1000:.0f}ms")
+            for i, (ent_id, score) in enumerate(resultados[:3], 1):
+                ent = self.entidades[ent_id]
+                nombre = ent['labels'][0] if ent['labels'] else ent_id
+                print(f"      {i}. {nombre} ({score:.3f})")
+        
+        # ====================================================================
+        # FASE 2: CONSTRUCCIÓN DE CONTEXTO
+        # ====================================================================
+        if verbose:
+            print("\n🏗️  Fase 2: Construcción de contexto")
+        
+        contexto = self.construir_contexto(entidades_ids)
+        
+        if verbose:
+            print(f"   ✅ Contexto: {len(contexto)} chars")
+        
+        # ====================================================================
+        # FASE 3: GENERACIÓN CON GROQ API
+        # ====================================================================
+        if verbose:
+            print("\n🌐 Fase 3: Generación con Groq API")
+        
+        start_api = time.time()
+        
+        try:
+            # Usar prompts de config_graphrag.py
+            response = self.client.chat.completions.create(
+                model=self.groq_model,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": SYSTEM_PROMPT
+                    },
+                    {
+                        "role": "user",
+                        "content": USER_PROMPT_TEMPLATE.format(
+                            contexto=contexto,
+                            pregunta=pregunta
+                        )
+                    }
+                ],
+                max_tokens=Config.MAX_TOKENS,
+                temperature=Config.TEMPERATURE,
+                top_p=Config.TOP_P
+            )
+            
+            respuesta = response.choices[0].message.content.strip()
+            t_api = time.time() - start_api
+            
+            # ================================================================
+            # VALIDACIÓN: Detectar frases prohibidas
+            # ================================================================
+            advertencia = False
+            for frase in Config.FRASES_PROHIBIDAS:
+                if frase.lower() in respuesta.lower():
+                    advertencia = True
+                    if verbose:
+                        print(f"   ⚠️  ADVERTENCIA: Posible interpretación detectada: '{frase}'")
+            
+            if advertencia and verbose:
+                print("   ⚠️  La respuesta puede contener interpretaciones no basadas en el contexto")
+            
+            if verbose:
+                print(f"   ✅ Generado en {t_api:.2f}s")
+                print(f"   📝 {len(respuesta)} caracteres")
+            
+            return respuesta
+        
+        except Exception as e:
+            return f"Error al llamar a Groq API: {e}"
+    
+    def responder(
+        self,
+        pregunta: str,
+        use_api: bool = True,
+        modo: str = "hibrido",
+        verbose: bool = False
+    ) -> str:
+        """
+        Responde a una pregunta (wrapper dual mode)
+        
+        Args:
+            pregunta: Pregunta del usuario
+            use_api: True para usar API, False para v2.0 puro
+            modo: Modo de búsqueda
+            verbose: Mostrar info de debug
+            
+        Returns:
+            Respuesta generada
+        """
+        if use_api:
+            return self.responder_con_api(pregunta, modo, verbose)
+        else:
+            # Usar v2.0 puro (sin API)
+            return super().responder(pregunta, modo, verbose)
+
+
+# ============================================================================
+# EJEMPLO DE USO
+# ============================================================================
+
+if __name__ == "__main__":
+    import os
+    from dotenv import load_dotenv
+    
+    load_dotenv()
+    
+    # Configuración
+    TTL_PATH = "qoyllurity.ttl"
+    GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+    
+    if not GROQ_API_KEY:
+        print("❌ GROQ_API_KEY no configurada en .env")
+        exit(1)
+    
+    # Inicializar
+    print("🚀 Inicializando GraphRAG v4.0 API (versión modular)...")
+    rag = GraphRAG_v4_API(
+        ttl_path=TTL_PATH,
+        groq_api_key=GROQ_API_KEY,
+        verbose=True
+    )
+    
+    # Test rápido
+    print("\n" + "="*70)
+    print("🧪 TEST RÁPIDO")
+    print("="*70)
+    
+    queries = [
+        "¿Qué es Qoyllur Rit'i?",
+        "¿Dónde está el glaciar Colque Punku?",
+        "¿Qué es el Ausangate?"
+    ]
+    
+    for query in queries:
+        print(f"\n❓ {query}")
+        resp = rag.responder(query, use_api=True, verbose=False)
+        print(f"💬 {resp}")
+    
+    print("\n" + "="*70)
+    print("✅ Test completado")
+    print("="*70)
