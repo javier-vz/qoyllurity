@@ -109,10 +109,10 @@ class GraphRAG_v4_API(GraphRAG_v2):
             
             # Extraer material si existe
             material = None
-            parte_rels = parte.get('relaciones', {})
-            if 'hechoDeRitual' in parte_rels and parte_rels['hechoDeRitual']:
-                # hechoDeRitual es un literal, no un ID
-                material = parte_rels['hechoDeRitual'][0]
+            parte_props = parte.get('propiedades', {})
+            if 'hechoDeRitual' in parte_props:
+                # hechoDeRitual es una propiedad datatype (literal)
+                material = parte_props['hechoDeRitual']
             
             # Construir descripción de parte
             if material and desc:
