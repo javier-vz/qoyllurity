@@ -32,6 +32,8 @@ PERMITIDO (información útil):
 ✅ Mencionar características: altitudes, tipos de lugares, nombres
 ✅ Relaciones documentadas: "X es parte de Y", "X es un apu"
 ✅ Hechos observables: "X es un glaciar", "Y es un área sagrada"
+✅ Objetos rituales: vestimenta, instrumentos, ofrendas
+✅ Duraciones y fechas de eventos
 
 FORMATO:
 - Responde de forma directa y clara
@@ -48,9 +50,13 @@ Pregunta: ¿Qué es el Ausangate?
 Contexto: "Ausangate es un apu, espíritu protector de montaña, de 6384 msnm"
 ✅ "El Ausangate es un apu (espíritu protector de montaña) de 6384 metros de altitud"
 
-Pregunta: ¿Qué contiene Sinakara?
-Contexto: "Sinakara contiene el Santuario de Qoyllur Rit'i"
-✅ "Sinakara contiene el Santuario del Señor de Qoyllur Rit'i"
+Pregunta: ¿Qué usa el ukuku en el traje?
+Contexto: "TrajeUkumari tiene partes: Pellon, Huaqollo, Sorriago"
+✅ "El traje del ukuku incluye el pellón (traje principal), el huaqollo (careta tejida) y el sorriago (látigo ceremonial)"
+
+Pregunta: ¿Cuánto dura la lomada?
+Contexto: "Lomada tiene duración: 24.0 horas"
+✅ "La lomada (caminata ritual) tiene una duración de 24 horas"
 """
 
 USER_PROMPT_TEMPLATE = """
@@ -76,7 +82,7 @@ MAPEOS_RELACIONES = {
     'realizaPrincipalmente': 'Realizado principalmente por',
     'esResponsableDe': 'Responsable de',
     
-    # Ubicación y geografía (NUEVAS PROPIEDADES)
+    # Ubicación y geografía
     'estaEn': 'Está en',
     'contiene': 'Contiene',
     'esParteDelApu': 'Parte del apu',
@@ -87,12 +93,17 @@ MAPEOS_RELACIONES = {
     'ocurre': 'Ocurre en',
     'ocurreEnLugar': 'Ocurre en',
     'defineMarcoTemporal': 'Parte de',
+    'tieneDuracionHoras': 'Duración (hrs)',
+    'tieneFecha': 'Fecha',
+    'tieneHoraInicio': 'Hora',
+    'esPeriodicoCon': 'Periodicidad',
     
     # Participación
     'participan': 'Participan',
     'participa': 'Participa en',
     'participaEn': 'Participa en',
     'requiereIntermediario': 'Requiere intermediario',
+    'perteneceA': 'Pertenece a',
     
     # Festividad
     'esParte': 'Incluye',
@@ -104,17 +115,30 @@ MAPEOS_RELACIONES = {
     'desde': 'Desde',
     'hacia': 'Hacia',
     'pasaPor': 'Pasa por',
+    'conduceA': 'Conduce a',
     
-    # Rituales (NUEVAS)
+    # Rituales
     'esDestinoRitualDe': 'Destino ritual de',
     'esLugarDeRitual': 'Lugar de ritual',
     'esVeneradoEn': 'Venerado en',
     'requiereRol': 'Requiere rol',
     'desempeniaRol': 'Desempeña rol',
+    'ejecutaDanza': 'Ejecuta danza',
+    
+    # Objetos rituales
+    'utilizaObjeto': 'Utiliza',
+    'portaObjeto': 'Porta',
+    'usaObjetoRitual': 'Usa objeto',
+    'usaVestimenta': 'Usa vestimenta',
+    'tieneParte': 'Tiene parte',
+    'esParteDe': 'Es parte de',
+    'hechoDeRitual': 'Hecho de',
+    'tieneNombreLocal': 'Nombre local',
     
     # Propiedades cuantitativas
     'tieneAltitudMetros': 'Altitud',
-    'tieneDuracionHoras': 'Duración',
+    'tieneImportancia': 'Importancia',
+    'cantidadAproximada': 'Cantidad aprox.',
 }
 
 # ============================================================================
@@ -136,15 +160,19 @@ def mapear_relacion(rel_tipo: str, obj_nombre: str) -> str:
     for key, value in MAPEOS_RELACIONES.items():
         if key.lower() in rel_tipo.lower():
             # Para propiedades numéricas, formato especial
-            if 'Altitud' in value or 'Duración' in value:
-                return f"{value}: {obj_nombre} metros" if 'Altitud' in value else f"{value}: {obj_nombre} horas"
+            if 'Altitud' in value:
+                return f"{value}: {obj_nombre} msnm"
+            elif 'Duración' in value:
+                return f"{value}: {obj_nombre}"
+            elif 'Fecha' in value or 'Hora' in value:
+                return f"{value}: {obj_nombre}"
             return f"{value}: {obj_nombre}"
     
     # Si no hay mapeo, usar formato genérico
     return f"Relacionado con: {obj_nombre}"
 
 
-def obtener_relaciones_naturales(entidad: dict, max_relaciones: int = 3, max_objetos: int = 2) -> list:
+def obtener_relaciones_naturales(entidad: dict, max_relaciones: int = 4, max_objetos: int = 3) -> list:
     """
     Extrae relaciones de una entidad y las convierte a lenguaje natural
     
@@ -180,14 +208,14 @@ class Config:
     TOP_K_CONTEXTO = 5   # Entidades a incluir en contexto
     
     # Parámetros de contexto
-    MAX_CHARS_CONTEXTO = 2000     # Máximo de caracteres en contexto
-    MAX_CHARS_DESC = 200          # Máximo de caracteres por descripción
-    MAX_RELACIONES = 3            # Máximo de tipos de relaciones por entidad
-    MAX_OBJETOS_POR_REL = 2       # Máximo de objetos por tipo de relación
+    MAX_CHARS_CONTEXTO = 2500     # Máximo de caracteres en contexto (aumentado)
+    MAX_CHARS_DESC = 250          # Máximo de caracteres por descripción (aumentado)
+    MAX_RELACIONES = 4            # Máximo de tipos de relaciones por entidad (aumentado)
+    MAX_OBJETOS_POR_REL = 3       # Máximo de objetos por tipo de relación (aumentado)
     
     # Parámetros del LLM
     MODELO_GROQ = "llama-3.3-70b-versatile"  # Modelo a usar
-    MAX_TOKENS = 300                          # Máximo de tokens en respuesta
+    MAX_TOKENS = 350                          # Máximo de tokens en respuesta (aumentado)
     TEMPERATURE = 0.0                         # Temperatura (0 = determinístico)
     TOP_P = 0.1                               # Top-p sampling
     
@@ -204,6 +232,6 @@ class Config:
 # METADATA
 # ============================================================================
 
-CONFIG_VERSION = "1.0.0"
-CONFIG_DATE = "2026-02-13"
-CONFIG_DESCRIPTION = "Configuración para GraphRAG v4.0 con lugares sagrados"
+CONFIG_VERSION = "1.1.0"
+CONFIG_DATE = "2026-03-02"
+CONFIG_DESCRIPTION = "Configuración GraphRAG v4.0 con objetos rituales, temporalidad e importancia"
