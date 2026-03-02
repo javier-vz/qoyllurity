@@ -1430,7 +1430,7 @@ xsd:time rdf:type rdfs:Datatype .
                           :Sorriago ,
                           :Umakhara ;
               :hechoDeRitual "lana"@es ;
-              rdfs:comment "Vestimenta ceremonial completa del ukuku. El conjunto articula elementos que representan al oso andino (ukumari) y sus funciones rituales."@es ;
+              rdfs:comment "Vestimenta ceremonial completa del ukuku que incluye: pellón (traje principal de lana), huaqollo (careta tejida de lana que cubre el rostro), umak'ara (pedazo de cuero en la cabeza), sorriago (látigo ceremonial de cuero trenzado), cruz de cobre portada en el pecho, silbato para anunciarse, puyka (caña para hacer ruido que imita a los osos), guantes y camisa blanca. El conjunto representa al oso andino (ukumari) y sus funciones rituales."@es ;
               rdfs:label "Traje de Ukumari"@es .
 
 
