@@ -9,7 +9,6 @@ Versión mejorada que usa:
 - Prompts modulares
 - Mapeos de relaciones actualizados
 - Soporte completo para lugares sagrados
-- EXPANSIÓN AUTOMÁTICA DE PARTES (tieneParte)
 """
 
 import time
@@ -40,7 +39,6 @@ class GraphRAG_v4_API(GraphRAG_v2):
     - Prompts externos configurables
     - Mapeos de relaciones actualizados
     - Soporte para lugares sagrados y jerarquía geográfica
-    - Expansión automática de objetos compuestos (tieneParte)
     """
     
     def __init__(
@@ -77,57 +75,6 @@ class GraphRAG_v4_API(GraphRAG_v2):
             print("=" * 70)
             print()
     
-    def expandir_partes(self, entidad: dict, max_partes: int = 10) -> str:
-        """
-        Expande las partes de un objeto compuesto
-        
-        Args:
-            entidad: Diccionario de entidad
-            max_partes: Máximo número de partes a incluir
-            
-        Returns:
-            String con descripción de partes o vacío
-        """
-        relaciones = entidad.get('relaciones', {})
-        
-        if 'tieneParte' not in relaciones:
-            return ""
-        
-        partes_info = []
-        for parte_id in relaciones['tieneParte'][:max_partes]:
-            parte = self.entidades.get(parte_id)
-            if not parte:
-                continue
-            
-            # Extraer nombre de la parte
-            parte_labels = parte.get('labels', [])
-            nombre = parte_labels[0] if parte_labels else parte_id
-            
-            # Extraer descripción de la parte
-            parte_comments = parte.get('comments', [])
-            desc = parte_comments[0][:100] if parte_comments else ""
-            
-            # Extraer material si existe
-            material = None
-            parte_rels = parte.get('relaciones', {})
-            if 'hechoDeRitual' in parte_rels and parte_rels['hechoDeRitual']:
-                # hechoDeRitual es un literal, no un ID
-                material = parte_rels['hechoDeRitual'][0]
-            
-            # Construir descripción de parte
-            if material and desc:
-                partes_info.append(f"{nombre} ({desc}, hecho de {material})")
-            elif desc:
-                partes_info.append(f"{nombre} ({desc})")
-            elif material:
-                partes_info.append(f"{nombre} (hecho de {material})")
-            else:
-                partes_info.append(nombre)
-        
-        if partes_info:
-            return f"\n  Partes: {'; '.join(partes_info)}"
-        return ""
-    
     def construir_contexto(
         self,
         entidades_ids: List[str],
@@ -135,7 +82,6 @@ class GraphRAG_v4_API(GraphRAG_v2):
     ) -> str:
         """
         Construye contexto para la API usando configuración externa
-        CON EXPANSIÓN AUTOMÁTICA DE PARTES
         
         Args:
             entidades_ids: IDs de entidades relevantes
@@ -177,10 +123,6 @@ class GraphRAG_v4_API(GraphRAG_v2):
             
             # Limitar según Config
             for rel_tipo, objetos in list(relaciones.items())[:Config.MAX_RELACIONES]:
-                # Saltar 'tieneParte' porque se maneja con expandir_partes()
-                if rel_tipo == 'tieneParte':
-                    continue
-                    
                 for obj_id in objetos[:Config.MAX_OBJETOS_POR_REL]:
                     obj_ent = self.entidades.get(obj_id, {})
                     if obj_ent:
@@ -195,11 +137,6 @@ class GraphRAG_v4_API(GraphRAG_v2):
             if rels_naturales:
                 # Limitar a 3 relaciones mostradas
                 info += f"\n  {'; '.join(rels_naturales[:3])}"
-            
-            # === EXPANSIÓN AUTOMÁTICA DE PARTES ===
-            partes_expansion = self.expandir_partes(ent)
-            if partes_expansion:
-                info += partes_expansion
             
             # Verificar si cabe en el límite
             parte_len = len(info)
@@ -267,7 +204,7 @@ class GraphRAG_v4_API(GraphRAG_v2):
                 print(f"      {i}. {nombre} ({score:.3f})")
         
         # ====================================================================
-        # FASE 2: CONSTRUCCIÓN DE CONTEXTO (con expansión de partes)
+        # FASE 2: CONSTRUCCIÓN DE CONTEXTO
         # ====================================================================
         if verbose:
             print("\n🏗️  Fase 2: Construcción de contexto")
@@ -276,9 +213,6 @@ class GraphRAG_v4_API(GraphRAG_v2):
         
         if verbose:
             print(f"   ✅ Contexto: {len(contexto)} chars")
-            # Verificar si se expandieron partes
-            if "Partes:" in contexto:
-                print(f"   🔧 Partes expandidas automáticamente")
         
         # ====================================================================
         # FASE 3: GENERACIÓN CON GROQ API
@@ -380,7 +314,7 @@ if __name__ == "__main__":
         exit(1)
     
     # Inicializar
-    print("🚀 Inicializando GraphRAG v4.0 API (versión modular con expansión de partes)...")
+    print("🚀 Inicializando GraphRAG v4.0 API (versión modular)...")
     rag = GraphRAG_v4_API(
         ttl_path=TTL_PATH,
         groq_api_key=GROQ_API_KEY,
@@ -395,8 +329,7 @@ if __name__ == "__main__":
     queries = [
         "¿Qué es Qoyllur Rit'i?",
         "¿Dónde está el glaciar Colque Punku?",
-        "Háblame de la vestimenta de los ukukus",
-        "¿Qué objetos porta el ukuku?"
+        "¿Qué es el Ausangate?"
     ]
     
     for query in queries:
