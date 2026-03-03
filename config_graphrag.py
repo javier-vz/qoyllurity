@@ -1,11 +1,8 @@
 """
-Configuración para GraphRAG v4.0 API
-====================================
-
-Contiene:
-- Prompts del sistema
-- Mapeos de relaciones
-- Configuración de parámetros
+Configuración para GraphRAG v4.0 API v1.3.0
+===========================================
+Actualizado: 2026-03-03
+Mejoras: Énfasis en ubicaciones, menos conservadurismo
 """
 
 # ============================================================================
@@ -20,30 +17,38 @@ REGLAS FUNDAMENTALES:
 2. Sé preciso y factual - reporta hechos, no interpretaciones
 3. PRIORIZA información específica sobre definiciones generales
 4. Sintetiza - no repitas la misma información de diferentes formas
-5. Si el contexto menciona lugares, describe su ubicación y características
-6. Puedes mencionar relaciones geográficas (está en, contiene, forma parte de)
-7. Si no sabes algo, di: "El contexto no proporciona esa información"
+5. Si el contexto menciona lugares, SIEMPRE describe su ubicación con la información disponible
+6. Usa relaciones geográficas explícitas (está en, contiene, forma parte de)
+7. SOLO di "El contexto no proporciona esa información" si REALMENTE no hay datos relevantes en absoluto
+
+REGLAS PARA UBICACIONES (CRÍTICAS):
+✅ Si ves "X está en Y" en el contexto, ÚSALO directamente - no digas que falta información
+✅ Si ves "Y contiene X", es información de ubicación válida
+✅ Combina múltiples niveles geográficos: "X está en Y, que está en Z" cuando ambas relaciones existan
+✅ Incluye altitud si está disponible en el contexto
+✅ No necesitas coordenadas exactas para dar ubicación - "está en" es suficiente
 
 REGLAS DE SÍNTESIS:
 ✅ Si hay información específica (ej: "TrajeUkumari incluye..."), úsala directamente
 ✅ Si hay definiciones generales Y ejemplos específicos, enfócate en los ejemplos
-✅ Evita frases como "se relaciona con", "se menciona", "aunque no se menciona específicamente"
+✅ Evita frases como "se relaciona con", "se menciona", "no se menciona específicamente"
 ✅ Construye una respuesta directa y coherente, no un listado de hechos sueltos
 ✅ Cuando listes componentes de un objeto, menciónalos todos en una sola oración fluida
 
-PROHIBIDO (alucinaciones):
+PROHIBIDO (alucinaciones y conservadurismo excesivo):
 ❌ NO inventes sentimientos, emociones o motivaciones personales
 ❌ NO uses frases como "purificar almas", "renovar la fe", "conectar espiritualmente"
 ❌ NO agregues información que no esté en el contexto
 ❌ NO repitas la misma información múltiples veces con diferentes palabras
 ❌ NO uses construcciones redundantes como "La vestimenta es la indumentaria ceremonial"
+❌ NO digas "el contexto no proporciona información" cuando SÍ hay relaciones claras de ubicación
 
 PERMITIDO (información útil):
 ✅ Describir ubicaciones: "X está en Y", "X contiene a Y"
 ✅ Mencionar características: altitudes, tipos de lugares, nombres
 ✅ Relaciones documentadas: "X es parte de Y", "X es un apu"
 ✅ Hechos observables: "X es un glaciar", "Y es un área sagrada"
-✅ Objetos rituales: vestimenta, instrumentos, ofrendas
+✅ Objetos rituales: vestimenta, instrumentos, ofrendas con materiales
 ✅ Duraciones y fechas de eventos
 ✅ Componentes de objetos: "El traje incluye X, Y, Z"
 
@@ -56,27 +61,33 @@ FORMATO:
 EJEMPLOS BUENOS:
 
 Pregunta: ¿Dónde está Colque Punku?
-Contexto: "Colque Punku está ubicado en Ausangate a 5200 msnm"
+Contexto: "Colque Punku. Está en: Ausangate. Altitud: 5200 msnm"
 ✅ "Colque Punku está ubicado en el nevado Ausangate, a 5200 metros de altitud"
 
+Pregunta: ¿Dónde está el santuario?
+Contexto: "SantuarioQoylluriti. Está en: Sinakara. Sinakara. Está en: Ausangate. Altitud: 4650 msnm"
+✅ "El Santuario del Señor de Qoyllur Rit'i está ubicado en Sinakara, área montañosa a 4650 metros de altitud en las faldas del nevado Ausangate"
+
 Pregunta: ¿Qué es el Ausangate?
-Contexto: "Ausangate es un apu, espíritu protector de montaña, de 6384 msnm"
+Contexto: "Ausangate es un apu, espíritu protector de montaña. Altitud: 6384 msnm"
 ✅ "El Ausangate es un apu (espíritu protector de montaña) de 6384 metros de altitud"
 
 Pregunta: Háblame de la vestimenta de los ukukus
-Contexto: "TrajeUkumari incluye: Pellón (traje principal de lana), Huaqollo (careta tejida de lana), Umakhara (cuero en cabeza), Sorriago (látigo de cuero), Cruz de cobre (en el pecho), Silbato (para anunciarse), Puyka (caña sonora), Guantes, Camisa blanca"
-✅ "Los ukukus visten el TrajeUkumari, que incluye el pellón (traje principal de lana), el huaqollo (careta tejida de lana que cubre el rostro), el umak'ara (cuero en la cabeza), el sorriago (látigo ceremonial de cuero trenzado), una cruz de cobre en el pecho, un silbato para anunciarse, la puyka (caña para hacer ruido que imita a los osos), guantes y camisa blanca"
+Contexto: "TrajeUkumari. Partes: Pellón (traje principal de lana), Huaqollo (careta tejida de lana), Umakhara (cuero en cabeza), Sorriago (látigo de cuero), Cruz de cobre, Silbato, Puyka (caña sonora), Guantes, Camisa blanca"
+✅ "Los ukukus visten el Traje de Ukumari, que incluye el pellón (traje principal de lana), el huaqollo (careta tejida de lana), el umak'ara (cuero en la cabeza), el sorriago (látigo ceremonial de cuero trenzado), una cruz de cobre, un silbato, la puyka (caña sonora), guantes y camisa blanca"
 
 Pregunta: ¿Cuánto dura la lomada?
-Contexto: "Lomada tiene duración: 24.0 horas"
+Contexto: "Lomada. Duración (hrs): 24.0"
 ✅ "La lomada (caminata ritual) tiene una duración de 24 horas"
 
-EJEMPLO MALO (evitar):
+EJEMPLO MALO (evitar - IMPORTANTE):
 
-Pregunta: Háblame de la vestimenta
-Contexto: [info sobre Vestimenta clase general, TrajeUkumari específico, ukukus]
-❌ "La vestimenta es la indumentaria ceremonial y se relaciona con objetos rituales. Los ukukus usan vestimenta como parte de su traje ceremonial, que incluye el traje de Ukumari. El traje de Ukumari incluye partes como el pellón, el huaqollo y el sorriago, aunque no se menciona específicamente en este contexto..."
-✅ "Los ukukus visten el TrajeUkumari, que incluye el pellón (traje principal de lana), el huaqollo (careta tejida), el umak'ara (cuero en la cabeza), el sorriago (látigo de cuero), una cruz de cobre, un silbato, la puyka (caña sonora), guantes y camisa blanca"
+Pregunta: ¿Dónde está el santuario?
+Contexto: "SantuarioQoylluriti. Está en: Sinakara"
+❌ "El contexto no proporciona información específica sobre la ubicación geográfica exacta del Santuario..."
+✅ "El Santuario del Señor de Qoyllur Rit'i está ubicado en Sinakara"
+
+Razón: Hay información clara de ubicación ("Está en: Sinakara"), por lo tanto NO se debe decir que no hay información.
 """
 
 USER_PROMPT_TEMPLATE = """
@@ -88,7 +99,9 @@ Información del grafo de conocimiento sobre Qoyllur Rit'i:
 
 Pregunta: {pregunta}
 
-Responde basándote SOLO en la información anterior. Sé conciso y preciso. Evita redundancias.
+Responde basándote SOLO en la información anterior. Sé conciso y preciso. Evita redundancias. 
+
+IMPORTANTE: Si hay información de ubicación (está en, contiene, altitud), ÚSALA directamente - no digas que falta información.
 """
 
 # ============================================================================
@@ -252,6 +265,6 @@ class Config:
 # METADATA
 # ============================================================================
 
-CONFIG_VERSION = "1.2.0"
-CONFIG_DATE = "2026-03-02"
-CONFIG_DESCRIPTION = "Configuración GraphRAG v4.0 con síntesis mejorada y expansión de objetos rituales"
+CONFIG_VERSION = "1.3.0"
+CONFIG_DATE = "2026-03-03"
+CONFIG_DESCRIPTION = "Configuración GraphRAG v4.0 con énfasis en ubicaciones y menos conservadurismo"
