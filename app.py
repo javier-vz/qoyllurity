@@ -357,7 +357,7 @@ def main():
             
             if st.session_state.mensajes:
                 st.markdown("---")
-                st.markdown("### 📜 Historial")
+                st.markdown("### Historial")
                 
                 for msg in st.session_state.mensajes:
                     if msg['tipo'] == 'user':
