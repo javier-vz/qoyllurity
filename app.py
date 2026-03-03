@@ -296,7 +296,7 @@ def main():
     <div style="text-align: center; padding: 0.5rem 0 1.5rem 0;">
         <h1>🏔️ Qoyllur Rit'i</h1>
         <p style="font-size: 1.1rem; color: #718096; font-weight: 500; margin: 0;">
-            Explora la peregrinación andina sagrada
+            Explora la Festividad en honor al Señor de Qoyllur Rit'i
         </p>
     </div>
     """, unsafe_allow_html=True)
