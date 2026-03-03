@@ -257,7 +257,7 @@ class GraphRAG_v4_API(GraphRAG_v2):
             return "No encontré información relacionada en el grafo."
         
         # ====================================================================
-        # BOOST: Priorizar instancias específicas sobre clases generales
+        # BOOST 1: Priorizar instancias específicas sobre clases generales
         # ====================================================================
         if any(palabra in pregunta.lower() for palabra in ['vestimenta', 'traje', 'ropa', 'viste', 'visten', 'porta']):
             # Buscar TrajeUkumari
@@ -272,6 +272,29 @@ class GraphRAG_v4_API(GraphRAG_v2):
                 resultados.insert(0, (traje_id, 0.98))  # Score alto
                 if verbose:
                     print(f"   🎯 Boosted: TrajeUkumari insertado en posición #1")
+        
+        # ====================================================================
+        # BOOST 2: Expandir con ubicaciones relacionadas (estaEn)
+        # ====================================================================
+        if any(palabra in pregunta.lower() for palabra in ['dónde', 'donde', 'ubicado', 'ubicación', 'está', 'esta']):
+            # Para cada entidad en resultados, agregar su ubicación si no está ya
+            entidades_con_ubicacion = []
+            for ent_id, score in resultados[:5]:
+                ent = self.entidades.get(ent_id, {})
+                relaciones = ent.get('relaciones', {})
+                
+                # Si tiene estaEn, agregar esa entidad también
+                if 'estaEn' in relaciones:
+                    for ubicacion_id in relaciones['estaEn']:
+                        if ubicacion_id not in [r[0] for r in resultados[:5]]:
+                            entidades_con_ubicacion.append((ubicacion_id, score * 0.9))
+            
+            # Insertar ubicaciones después de las primeras 2
+            if entidades_con_ubicacion:
+                for i, (ent_id, score) in enumerate(entidades_con_ubicacion[:2], 2):
+                    resultados.insert(i, (ent_id, score))
+                if verbose:
+                    print(f"   🎯 Boosted: {len(entidades_con_ubicacion[:2])} ubicaciones expandidas")
         
         # Extraer IDs de las top entidades
         entidades_ids = [ent_id for ent_id, _ in resultados[:Config.TOP_K_CONTEXTO]]
