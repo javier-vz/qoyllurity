@@ -1,17 +1,7 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Mar  3 13:08:05 2026
-
-@author: jvera
-"""
-
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-🏔️ Qoyllur Rit'i Explorer - Layout Horizontal Mejorado
-========================================================
-GraphRAG v4.0 API + Mapa Interactivo
-Chat + Mapa simultáneos | Paleta Contrastante
+Qoyllur Rit'i Explorer
 """
 
 import streamlit as st
@@ -22,9 +12,6 @@ from rdflib import Graph, Literal, Namespace
 from rdflib.namespace import RDFS, RDF
 import os
 
-# ============================================================================
-# CONFIGURACIÓN
-# ============================================================================
 st.set_page_config(
     page_title="Qoyllur Rit'i Explorer", 
     page_icon="🏔️", 
@@ -32,35 +19,31 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Namespaces
 GEO = Namespace("http://www.w3.org/2003/01/geo/wgs84_pos#")
 FESTIVIDAD = Namespace("http://example.org/festividades#")
 
 # ============================================================================
-# CSS MEJORADO - PALETA CONTRASTANTE
+# CSS
 # ============================================================================
 st.markdown("""
 <style>
-    /* Paleta de colores Qoyllur Rit'i */
     .main { 
         background: linear-gradient(135deg, #1a1f2e 0%, #2c5f8d 100%);
         padding: 1rem;
     }
     
     .block-container {
-        max-width: 1400px;
-        padding: 2rem;
+        max-width: 100%;
+        padding: 1.5rem;
         background: white;
-        border-radius: 24px;
+        border-radius: 16px;
         box-shadow: 0 20px 60px rgba(0,0,0,0.3);
     }
     
     h1 {
-        background: linear-gradient(135deg, #2c5f8d 0%, #1a1f2e 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+        color: #2c5f8d;
         font-weight: 800;
-        font-size: 3rem;
+        font-size: 2.5rem;
         margin-bottom: 0.5rem;
         text-align: center;
     }
@@ -68,56 +51,41 @@ st.markdown("""
     h2 {
         color: #2d3748;
         font-weight: 700;
-        font-size: 1.5rem;
-        margin-top: 2rem;
+        font-size: 1.3rem;
+        margin-top: 0;
+        margin-bottom: 1rem;
     }
     
     h3 {
-        color: #4a5568;
+        color: #2c5f8d;
         font-weight: 600;
+        font-size: 1.1rem;
+        margin-top: 0;
+        margin-bottom: 0.75rem;
     }
     
-    /* Columnas */
-    [data-testid="column"] {
-        padding: 0.5rem;
-    }
-    
-    /* Botón principal - DORADO */
     .stButton button {
         background: linear-gradient(135deg, #d4af37 0%, #b8941f 100%);
         color: #1a1f2e;
         border: none;
-        border-radius: 12px;
-        padding: 0.75rem 2rem;
-        font-weight: 600;
+        border-radius: 8px;
+        padding: 0.6rem 1.5rem;
+        font-weight: 700;
         font-size: 1rem;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
+        box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);
         width: 100%;
     }
     
     .stButton button:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(212, 175, 55, 0.6);
+        box-shadow: 0 6px 16px rgba(212, 175, 55, 0.6);
     }
     
-    /* Card de respuesta */
-    .respuesta-card {
-        background: linear-gradient(135deg, #f6f8fb 0%, #ffffff 100%);
-        border-left: 6px solid #2c5f8d;
-        padding: 2rem;
-        border-radius: 20px;
-        margin: 2rem 0;
-        box-shadow: 0 8px 30px rgba(0,0,0,0.12);
-    }
-    
-    /* Inputs */
     .stTextInput input, .stSelectbox select {
-        border-radius: 12px;
+        border-radius: 8px;
         border: 2px solid #e2e8f0;
-        padding: 0.75rem 1rem;
-        font-size: 1rem;
-        transition: all 0.3s ease;
+        padding: 0.6rem 1rem;
+        font-size: 0.95rem;
     }
     
     .stTextInput input:focus {
@@ -125,52 +93,41 @@ st.markdown("""
         box-shadow: 0 0 0 3px rgba(44, 95, 141, 0.1);
     }
     
-    /* Métricas */
     [data-testid="stMetricValue"] {
-        font-size: 2rem;
+        font-size: 1.5rem;
         font-weight: 700;
         color: #2c5f8d;
     }
     
     [data-testid="stMetricLabel"] {
-        font-size: 0.9rem;
+        font-size: 0.75rem;
         font-weight: 600;
         color: #718096;
     }
     
-    /* Radio buttons */
     .stRadio [role="radiogroup"] {
-        gap: 1rem;
+        gap: 0.75rem;
         background: #f7fafc;
         padding: 0.5rem;
-        border-radius: 12px;
-    }
-    
-    .stRadio [role="radio"] {
         border-radius: 8px;
     }
     
-    /* Expander */
-    .streamlit-expanderHeader {
-        background: #f7fafc;
-        border-radius: 12px;
-        font-weight: 600;
-    }
-    
-    /* Mapa */
     iframe {
-        border-radius: 16px;
-        box-shadow: 0 8px 30px rgba(0,0,0,0.12);
-    }
-    
-    /* Info/Warning boxes */
-    .stAlert {
         border-radius: 12px;
-        border: none;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.12);
     }
     
-    /* Ocultar elementos */
     #MainMenu, footer, header {visibility: hidden;}
+    
+    /* Ajustar columnas */
+    [data-testid="column"] {
+        padding: 0.5rem;
+    }
+    
+    /* Info box */
+    .stAlert {
+        border-radius: 8px;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -199,17 +156,13 @@ PREGUNTAS_DESTACADAS = [
     "¿Qué hacen los ukukus?",
     "¿Qué es la lomada?",
     "¿Cuánto dura la lomada?",
-    "¿Quién realiza la lomada?",
-    "¿Qué eventos hay el día 2?",
-    "¿Cuál es el recorrido de la peregrinación?"
 ]
 
 # ============================================================================
-# CARGAR GRAPHRAG V4.0
+# CARGAR GRAPHRAG
 # ============================================================================
 @st.cache_resource
 def cargar_motor():
-    """Carga GraphRAG v4.0 API"""
     try:
         from graphrag_v4_api import GraphRAG_v4_API
         
@@ -236,7 +189,6 @@ def cargar_motor():
 # ============================================================================
 @st.cache_resource
 def cargar_lugares():
-    """Extrae lugares del TTL"""
     ttl_path = "qoyllurity.ttl"
     
     if not Path(ttl_path).exists():
@@ -298,8 +250,6 @@ def cargar_lugares():
 # CREAR MAPA
 # ============================================================================
 def crear_mapa(lugares):
-    """Crea mapa Folium elegante"""
-    
     if not lugares:
         m = folium.Map(location=[-13.5, -71.2], zoom_start=10)
         return m
@@ -308,11 +258,7 @@ def crear_mapa(lugares):
     lons = [l["lon"] for l in lugares.values()]
     centro = [sum(lats) / len(lats), sum(lons) / len(lons)]
     
-    m = folium.Map(
-        location=centro,
-        zoom_start=11,
-        tiles='OpenStreetMap'
-    )
+    m = folium.Map(location=centro, zoom_start=11, tiles='OpenStreetMap')
     
     for lugar in lugares.values():
         if 'Apu' in lugar['tipos']:
@@ -327,22 +273,17 @@ def crear_mapa(lugares):
             color, icon = 'blue', 'map-marker'
         
         popup_html = f"""
-        <div style="width: 280px; font-family: 'Segoe UI', sans-serif;">
-            <h4 style="color: #2d3748; margin: 0 0 12px 0; font-size: 1.1rem;">
-                {lugar['nombre']}
-            </h4>
-            <p style="color: #4a5568; font-size: 0.95rem; line-height: 1.6; margin: 0;">
-                {lugar['descripcion'][:200]}{'...' if len(lugar['descripcion']) > 200 else ''}
-            </p>
-            <p style="color: #a0aec0; font-size: 0.85rem; margin-top: 12px; padding-top: 12px; border-top: 1px solid #e2e8f0;">
-                📍 {lugar['lat']:.5f}, {lugar['lon']:.5f}
+        <div style="width: 220px;">
+            <h4 style="color: #2c5f8d; margin: 0 0 8px 0;">{lugar['nombre']}</h4>
+            <p style="color: #4a5568; font-size: 0.85rem; line-height: 1.5; margin: 0;">
+                {lugar['descripcion'][:150]}{'...' if len(lugar['descripcion']) > 150 else ''}
             </p>
         </div>
         """
         
         folium.Marker(
             location=[lugar["lat"], lugar["lon"]],
-            popup=folium.Popup(popup_html, max_width=320),
+            popup=folium.Popup(popup_html, max_width=260),
             tooltip=f"<b>{lugar['nombre']}</b>",
             icon=folium.Icon(color=color, icon=icon, prefix='fa')
         ).add_to(m)
@@ -353,22 +294,17 @@ def crear_mapa(lugares):
 # MAIN
 # ============================================================================
 def main():
-    # Header
     st.markdown("""
-    <div style="text-align: center; padding: 1rem 0 2rem 0;">
+    <div style="text-align: center; padding: 0.5rem 0 1.5rem 0;">
         <h1>🏔️ Qoyllur Rit'i</h1>
-        <p style="font-size: 1.3rem; color: #718096; font-weight: 500;">
+        <p style="font-size: 1.1rem; color: #718096; font-weight: 500; margin: 0;">
             Explora la peregrinación andina sagrada
         </p>
     </div>
     """, unsafe_allow_html=True)
     
-    # Layout horizontal: Chat (70%) + Mapa (30%)
-    col_chat, col_mapa = st.columns([7, 3], gap="medium")
+    col_chat, col_mapa = st.columns([2, 1], gap="large")
     
-    # ========================================================================
-    # COLUMNA IZQUIERDA: CHAT (70%)
-    # ========================================================================
     with col_chat:
         st.markdown("## 💬 Consultas")
         
@@ -376,7 +312,7 @@ def main():
         
         if motor:
             modo = st.radio(
-                "¿Cómo quieres preguntar?",
+                "Modo",
                 ["📋 Seleccionar de la lista", "✍️ Escribir mi pregunta"],
                 horizontal=True,
                 label_visibility="collapsed"
@@ -385,73 +321,41 @@ def main():
             pregunta = ""
             
             if modo == "📋 Seleccionar de la lista":
-                col1, col2 = st.columns([5, 1])
-                with col1:
-                    pregunta = st.selectbox(
-                        "Pregunta",
-                        options=[""] + PREGUNTAS_DESTACADAS,
-                        format_func=lambda x: "👆 Selecciona una pregunta..." if x == "" else x,
-                        label_visibility="collapsed"
-                    )
-                with col2:
-                    st.markdown("<div style='margin-top: 8px;'>", unsafe_allow_html=True)
-                    btn = st.button("✨ Preguntar", type="primary")
-                    st.markdown("</div>", unsafe_allow_html=True)
-            
+                pregunta = st.selectbox(
+                    "Pregunta",
+                    options=[""] + PREGUNTAS_DESTACADAS,
+                    format_func=lambda x: "👆 Selecciona una pregunta..." if x == "" else x,
+                    label_visibility="collapsed"
+                )
             else:
-                col1, col2 = st.columns([5, 1])
-                with col1:
-                    pregunta = st.text_input(
-                        "Tu pregunta",
-                        placeholder="Ejemplo: ¿Dónde está el Ausangate?",
-                        label_visibility="collapsed"
-                    )
-                with col2:
-                    st.markdown("<div style='margin-top: 8px;'>", unsafe_allow_html=True)
-                    btn = st.button("✨ Preguntar", type="primary")
-                    st.markdown("</div>", unsafe_allow_html=True)
+                pregunta = st.text_input(
+                    "Tu pregunta",
+                    placeholder="Ejemplo: ¿Dónde está el Ausangate?",
+                    label_visibility="collapsed"
+                )
                 
                 with st.expander("💡 Ver ejemplos de preguntas"):
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.markdown("""
-                        **📍 Sobre lugares:**
-                        - ¿Qué es el Ausangate?
-                        - ¿Dónde está Colque Punku?
-                        - ¿Qué es Sinakara?
-                        - ¿Dónde está el santuario?
-                        """)
-                    with col2:
-                        st.markdown("""
-                        **🎭 Sobre la festividad:**
-                        - ¿Qué hacen los ukukus?
-                        - ¿Quién realiza la lomada?
-                        - ¿Qué eventos hay el día 2?
-                        - ¿Cuál es el recorrido?
-                        """)
+                    st.markdown("""
+                    - ¿Qué es el Ausangate?
+                    - ¿Dónde está Colque Punku?
+                    - ¿Qué hacen los ukukus?
+                    - ¿Cuál es el recorrido de la peregrinación?
+                    """)
             
-            # Procesar
+            btn = st.button("✨ Preguntar", type="primary")
+            
             if btn and pregunta:
                 agregar_mensaje('user', pregunta)
                 
-                with st.spinner("🔍 Consultando el grafo de conocimiento..."):
+                with st.spinner("🔍 Consultando..."):
                     try:
-                        respuesta = motor.responder(
-                            pregunta,
-                            use_api=True,
-                            modo="hibrido",
-                            verbose=False
-                        )
+                        respuesta = motor.responder(pregunta, use_api=True, modo="hibrido", verbose=False)
                         agregar_mensaje('bot', respuesta)
                     except Exception as e:
                         agregar_mensaje('bot', f"❌ Error: {e}")
                 
                 st.rerun()
             
-            elif btn:
-                st.warning("⚠️ Por favor escribe o selecciona una pregunta")
-            
-            # Mostrar historial
             if st.session_state.mensajes:
                 st.markdown("---")
                 st.markdown("### 📜 Historial")
@@ -459,75 +363,48 @@ def main():
                 for msg in st.session_state.mensajes:
                     if msg['tipo'] == 'user':
                         st.markdown(f"""
-                        <div style="background: linear-gradient(135deg, #2c5f8d 0%, #1a1f2e 100%); color: white; padding: 1rem 1.25rem; border-radius: 12px; margin: 0.75rem 0; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+                        <div style="background: #2c5f8d; color: white; padding: 0.75rem 1rem; border-radius: 8px; margin: 0.5rem 0;">
                             <strong>Tú:</strong> {msg['texto']}
                         </div>
                         """, unsafe_allow_html=True)
                     else:
                         st.markdown(f"""
-                        <div style="background: #f0f4f8; padding: 1rem 1.25rem; border-radius: 12px; margin: 0.75rem 0; border-left: 4px solid #d4af37; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                        <div style="background: #f0f4f8; padding: 0.75rem 1rem; border-radius: 8px; margin: 0.5rem 0; border-left: 3px solid #d4af37;">
                             <strong style="color: #2c5f8d;">Asistente:</strong><br>
-                            <p style="margin: 0.5rem 0 0 0; line-height: 1.7; color: #2d3748;">{msg['texto']}</p>
+                            <p style="margin: 0.5rem 0 0 0; color: #2d3748;">{msg['texto']}</p>
                         </div>
                         """, unsafe_allow_html=True)
                 
-                if st.button("🗑️ Limpiar historial"):
+                if st.button("🗑️ Limpiar"):
                     limpiar_chat()
                     st.rerun()
             else:
-                st.info("💡 **Tip:** Selecciona o escribe una pregunta para comenzar")
+                st.info("💡 Selecciona o escribe una pregunta")
         
         else:
-            st.error(f"""
-            ⚠️ **Sistema de IA no disponible**
-            
-            **Error:** {error}
-            
-            **Necesitas:**
-            1. Configurar `GROQ_API_KEY` en Streamlit Secrets
-            2. Archivos: `graphrag_v4_api.py`, `config_graphrag.py`
-            3. Archivo: `qoyllurity.ttl`
-            """)
+            st.error(f"⚠️ Sistema no disponible: {error}")
     
-    # ========================================================================
-    # COLUMNA DERECHA: MAPA (30% - SIEMPRE VISIBLE)
-    # ========================================================================
     with col_mapa:
         st.markdown("### 📍 Mapa de Lugares")
         
         lugares = cargar_lugares()
         
         if lugares:
-            # Métricas compactas
             m1, m2 = st.columns(2)
             
             with m1:
-                st.metric("📍 Lugares", len(lugares))
+                st.metric("Lugares", len(lugares))
             
             with m2:
                 apus = sum(1 for l in lugares.values() if 'Apu' in l['tipos'])
-                st.metric("⛰️ Apus", apus)
+                st.metric("Apus", apus)
             
-            st.markdown("<br>", unsafe_allow_html=True)
-            
-            # Mapa compacto
             mapa = crear_mapa(lugares)
-            st_folium(mapa, width=None, height=550, returned_objects=[])
+            st_folium(mapa, width=None, height=500, returned_objects=[])
             
             st.caption("💡 Click en marcadores para más info")
-            
         else:
-            st.warning("⚠️ No se encontraron lugares en el archivo TTL")
-    
-    # Footer
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    st.markdown("""
-    <div style="text-align: center; padding: 2rem 0 1rem 0; border-top: 2px solid #e2e8f0;">
-        <p style="color: #a0aec0; font-size: 0.95rem; margin: 0;">
-            🏔️ <b>Qoyllur Rit'i Explorer</b> | Powered by GraphRAG v4.0 API + Groq
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
+            st.warning("⚠️ Sin lugares en TTL")
 
 if __name__ == "__main__":
     main()
