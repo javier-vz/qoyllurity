@@ -119,12 +119,10 @@ st.markdown("""
     
     #MainMenu, footer, header {visibility: hidden;}
     
-    /* Ajustar columnas */
     [data-testid="column"] {
         padding: 0.5rem;
     }
     
-    /* Info box */
     .stAlert {
         border-radius: 8px;
     }
@@ -303,7 +301,8 @@ def main():
     </div>
     """, unsafe_allow_html=True)
     
-    col_chat, col_mapa = st.columns([2, 1], gap="large")
+    # 50/50 CHAT Y MAPA
+    col_chat, col_mapa = st.columns([1, 1], gap="large")
     
     with col_chat:
         st.markdown("## 💬 Consultas")
@@ -400,7 +399,7 @@ def main():
                 st.metric("Apus", apus)
             
             mapa = crear_mapa(lugares)
-            st_folium(mapa, width=None, height=500, returned_objects=[])
+            st_folium(mapa, width=None, height=550, returned_objects=[])
             
             st.caption("💡 Click en marcadores para más info")
         else:
