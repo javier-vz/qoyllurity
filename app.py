@@ -404,6 +404,23 @@ def main():
             st.caption("💡 Click en marcadores para más info")
         else:
             st.warning("⚠️ Sin lugares en TTL")
+            
+# Footer técnico
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("""
+    <div style="text-align: center; padding: 1.5rem 0 0.5rem 0; border-top: 2px solid #e2e8f0; margin-top: 2rem;">
+        <p style="color: #718096; font-size: 0.9rem; margin: 0;">
+            🏔️ <b>Qoyllur Rit'i Explorer</b>
+        </p>
+        <p style="color: #a0aec0; font-size: 0.85rem; margin: 0.5rem 0 0 0;">
+            Powered by <b>GraphRAG v4.0</b> (Knowledge Graph + Retrieval Augmented Generation) 
+            | <b>Groq API</b> (llama-3.3-70b) | <b>RDF/Turtle</b> ontology
+        </p>
+        <p style="color: #cbd5e0; font-size: 0.75rem; margin: 0.5rem 0 0 0;">
+            Sistema de consultas sobre festividad andina usando grafos de conocimiento semántico
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
