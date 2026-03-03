@@ -38,9 +38,11 @@ xsd:time rdf:type rdfs:Datatype .
 #################################################################
 
 ###  http://example.org/festividades#antesDe
-:antesDe rdf:type owl:ObjectProperty ;
+:antesDe rdf:type owl:ObjectProperty ,
+                  owl:TransitiveProperty ;
          rdfs:domain :EventoRitual ;
          rdfs:range :EventoRitual ;
+         rdfs:comment "Orden temporal. Transitiva: si A es antes de B y B es antes de C, entonces A es antes de C."@es ;
          rdfs:label "antes de"@es .
 
 
@@ -118,9 +120,10 @@ xsd:time rdf:type rdfs:Datatype .
 ###  http://example.org/festividades#esParteDe
 :esParteDe rdf:type owl:ObjectProperty ;
            owl:inverseOf :tieneParte ;
+           rdf:type owl:TransitiveProperty ;
            rdfs:domain :ObjetoRitual ;
            rdfs:range :ObjetoRitual ;
-           rdfs:comment "Indica que un objeto es componente de otro objeto mayor."@es ;
+           rdfs:comment "Indica que un objeto es componente de otro objeto mayor. Transitiva: si A es parte de B y B es parte de C, entonces A es parte de C."@es ;
            rdfs:label "es parte de"@es .
 
 
@@ -153,8 +156,27 @@ xsd:time rdf:type rdfs:Datatype .
                 rdfs:label "es periódico con"@es .
 
 
+###  http://example.org/festividades#esPortadoPor
+:esPortadoPor rdf:type owl:ObjectProperty ;
+              owl:inverseOf :portaObjeto ;
+              rdfs:domain :ObjetoRitual ;
+              rdfs:range :Participante ;
+              rdfs:comment "Un objeto es portado por participante(s)."@es ;
+              rdfs:label "es portado por"@es .
+
+
+###  http://example.org/festividades#esUsadoPor
+:esUsadoPor rdf:type owl:ObjectProperty ;
+            owl:inverseOf :usaObjetoRitual ;
+            rdfs:domain :ObjetoRitual ;
+            rdfs:range :Participante ;
+            rdfs:comment "Un objeto ritual es usado por participante(s)."@es ;
+            rdfs:label "es usado por"@es .
+
+
 ###  http://example.org/festividades#estaConformadaPor
 :estaConformadaPor rdf:type owl:ObjectProperty ;
+                   owl:inverseOf :perteneceA ;
                    rdfs:domain :Nacion ;
                    rdfs:range :Lugar ;
                    rdfs:comment "Distritos o comunidades que conforman una nación."@es ;
@@ -162,10 +184,11 @@ xsd:time rdf:type rdfs:Datatype .
 
 
 ###  http://example.org/festividades#estaEn
-:estaEn rdf:type owl:ObjectProperty ;
+:estaEn rdf:type owl:ObjectProperty ,
+                 owl:TransitiveProperty ;
         rdfs:domain :Lugar ;
         rdfs:range :Lugar ;
-        rdfs:comment "Un lugar está contenido geográficamente dentro de otro lugar"@es ;
+        rdfs:comment "Un lugar está contenido geográficamente dentro de otro lugar. Transitiva: si A está en B y B está en C, entonces A está en C."@es ;
         rdfs:label "está ubicado en"@es .
 
 
@@ -177,6 +200,7 @@ xsd:time rdf:type rdfs:Datatype .
 
 ###  http://example.org/festividades#participaEn
 :participaEn rdf:type owl:ObjectProperty ;
+             owl:inverseOf :realizadoPor ;
              rdfs:domain :Participante ;
              rdfs:range :EventoRitual ;
              rdfs:comment "Relación general de participación."@es ;
@@ -225,7 +249,7 @@ xsd:time rdf:type rdfs:Datatype .
 :sucedeInmediatamenteA rdf:type owl:ObjectProperty ;
                        rdfs:domain :EventoRitual ;
                        rdfs:range :EventoRitual ;
-                       rdfs:comment "Secuencia temporal estricta."@es ;
+                       rdfs:comment "Sucesión temporal directa. NO transitiva porque 'inmediatamente' implica sin intermedios."@es ;
                        rdfs:label "sucede inmediatamente a"@es .
 
 
@@ -285,7 +309,8 @@ xsd:time rdf:type rdfs:Datatype .
 
 
 ###  http://example.org/festividades#tieneAltitudMetros
-:tieneAltitudMetros rdf:type owl:DatatypeProperty ;
+:tieneAltitudMetros rdf:type owl:DatatypeProperty ,
+                             owl:FunctionalProperty ;
                     rdfs:domain :Lugar ;
                     rdfs:range xsd:integer ;
                     rdfs:comment "Altitud sobre el nivel del mar en metros."@es ;
@@ -301,15 +326,17 @@ xsd:time rdf:type rdfs:Datatype .
 
 
 ###  http://example.org/festividades#tieneDuracionHoras
-:tieneDuracionHoras rdf:type owl:DatatypeProperty ;
+:tieneDuracionHoras rdf:type owl:DatatypeProperty ,
+                             owl:FunctionalProperty ;
                     rdfs:domain :EventoRitual ;
                     rdfs:range xsd:decimal ;
-                    rdfs:comment "Duración aproximada en horas."@es ;
+                    rdfs:comment "Duración en horas. Funcional: un evento tiene UNA SOLA duración."@es ;
                     rdfs:label "tiene duración en horas"@es .
 
 
 ###  http://example.org/festividades#tieneFecha
-:tieneFecha rdf:type owl:DatatypeProperty ;
+:tieneFecha rdf:type owl:DatatypeProperty ,
+                     owl:FunctionalProperty ;
             rdfs:domain :EventoRitual ;
             rdfs:range xsd:date ;
             rdfs:comment "Fecha específica. Formato: YYYY-MM-DD."@es ;
@@ -326,7 +353,8 @@ xsd:time rdf:type rdfs:Datatype .
 
 
 ###  http://example.org/festividades#tieneHoraInicio
-:tieneHoraInicio rdf:type owl:DatatypeProperty ;
+:tieneHoraInicio rdf:type owl:DatatypeProperty ,
+                          owl:FunctionalProperty ;
                  rdfs:domain :EventoRitual ;
                  rdfs:range xsd:time ;
                  rdfs:comment "Hora de inicio. Formato: HH:MM:SS."@es ;
@@ -400,7 +428,7 @@ xsd:time rdf:type rdfs:Datatype .
 ###  http://example.org/festividades#Apu
 :Apu rdf:type owl:Class ;
      rdfs:subClassOf :LugarSagrado ;
-     rdfs:comment "Espíritu protector de montaña en la cosmovisión andina, asociado a nevados."@es ;
+     rdfs:comment "Espíritu protector de montaña en la cosmovisión andina, asociado a nevados. Un apu (espíritu de montaña) no es un participante humano, objeto o fuente."@es ;
      rdfs:label "Apu"@es .
 
 
@@ -432,12 +460,14 @@ xsd:time rdf:type rdfs:Datatype .
 ###  http://example.org/festividades#Danzante
 :Danzante rdf:type owl:Class ;
           rdfs:subClassOf :Individuo ;
+          owl:disjointWith :Peregrino ;
           rdfs:comment "Participante que ejecuta danzas rituales."@es ;
           rdfs:label "Danzante"@es .
 
 
 ###  http://example.org/festividades#EventoRitual
 :EventoRitual rdf:type owl:Class ;
+              owl:disjointWith :FuenteBibliografica ;
               rdfs:label "EventoRitual" .
 
 
@@ -450,6 +480,10 @@ xsd:time rdf:type rdfs:Datatype .
 ###  http://example.org/festividades#FuenteBibliografica
 :FuenteBibliografica rdf:type owl:Class ;
                      rdfs:subClassOf :RecursoMultimedia ;
+                     owl:disjointWith :Lugar ,
+                                      :ObjetoRitual ,
+                                      :Participante ,
+                                      :PracticaCultural ;
                      rdfs:comment "Artículo académico o libro relacionado."@es .
 
 
@@ -506,6 +540,8 @@ xsd:time rdf:type rdfs:Datatype .
 
 ###  http://example.org/festividades#ObjetoRitual
 :ObjetoRitual rdf:type owl:Class ;
+              owl:disjointWith :Participante ,
+                               :PracticaCultural ;
               rdfs:comment "Artefacto material utilizado en ceremonias con significado simbólico."@es ;
               rdfs:label "Objeto Ritual"@es .
 
@@ -524,7 +560,8 @@ xsd:time rdf:type rdfs:Datatype .
 
 ###  http://example.org/festividades#Participante
 :Participante rdf:type owl:Class ;
-              rdfs:comment "Actor individual o colectivo que toma parte en la festividad del Señor de Qoyllu Rit'i."@es ;
+              owl:disjointWith :PracticaCultural ;
+              rdfs:comment "Actor individual o colectivo que toma parte en la festividad del Señor de Qoyllu Rit'i. Un participante no puede ser simultáneamente un objeto ritual, práctica cultural o fuente bibliográfica."@es ;
               rdfs:label "Participante"@es .
 
 
@@ -1521,6 +1558,37 @@ xsd:time rdf:type rdfs:Datatype .
            rdfs:label "Laguna Yanaqocha"@es ;
            geo:lat -13.5850 ;
            geo:long -71.1800 .
+
+
+#################################################################
+#    General axioms
+#################################################################
+
+[ rdf:type owl:AllDisjointClasses ;
+  owl:members ( :Apu
+                :FuenteBibliografica
+                :ObjetoRitual
+                :Participante
+              )
+] .
+
+
+[ rdf:type owl:AllDisjointClasses ;
+  owl:members ( :Articulo
+                :Libro
+                :PaginaWeb
+              )
+] .
+
+
+[ rdf:type owl:AllDisjointClasses ;
+  owl:members ( :ImagenReligiosa
+                :InsigniaRitual
+                :Instrumento
+                :OfrendaMaterial
+                :Vestimenta
+              )
+] .
 
 
 ###  Generated by the OWL API (version 4.5.29.2024-05-13T12:11:03Z) https://github.com/owlcs/owlapi
