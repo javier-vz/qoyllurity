@@ -7,6 +7,8 @@ Dark mode · Mobile-first · GraphRAG v4.0 · Fichas patrimoniales
 
 import os
 import re
+import io
+from datetime import datetime
 import streamlit as st
 
 st.set_page_config(
@@ -257,6 +259,186 @@ hr { border-color: #30363d !important; margin: 1rem 0 !important; }
 .empty-state { text-align:center; padding:2.5rem 1rem; color:#8b949e; font-size:0.85rem; }
 </style>
 """, unsafe_allow_html=True)
+
+# ── PDF GENERATOR ─────────────────────────────────────────────────────────────
+def generar_ficha_pdf(texto: str, entidad: str, tipo: str) -> bytes:
+    """
+    Genera un PDF de ficha patrimonial con reportlab.
+    Busca imagen en imagenes/ para incluirla en la portada.
+    """
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib import colors
+    from reportlab.lib.units import cm
+    from reportlab.lib.styles import ParagraphStyle
+    from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_JUSTIFY
+    from reportlab.platypus import (
+        SimpleDocTemplate, Paragraph, Spacer, HRFlowable,
+        Table, TableStyle, Image, KeepTogether
+    )
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
+
+    PAGE_W, PAGE_H = A4
+    GOLD   = colors.HexColor("#d4a017")
+    DARK   = colors.HexColor("#0d1117")
+    SURF   = colors.HexColor("#161b22")
+    MUTED  = colors.HexColor("#8b949e")
+    LIGHT  = colors.HexColor("#e6edf3")
+    WHITE  = colors.white
+
+    buf = io.BytesIO()
+
+    doc = SimpleDocTemplate(
+        buf,
+        pagesize=A4,
+        leftMargin=2.2*cm, rightMargin=2.2*cm,
+        topMargin=2*cm,    bottomMargin=2*cm,
+        title=f"Ficha Patrimonial — {entidad}",
+        author="Qoyllur Rit'i Explorer · GraphRAG v4.0",
+        subject="Patrimonio Cultural Inmaterial",
+    )
+
+    # ── Estilos ───────────────────────────────────────────────────────────────
+    def sty(name, **kw):
+        return ParagraphStyle(name, **kw)
+
+    s_title = sty("title",
+        fontSize=20, leading=24, textColor=GOLD,
+        fontName="Helvetica-Bold", spaceAfter=4,
+        alignment=TA_LEFT)
+
+    s_subtitle = sty("subtitle",
+        fontSize=10, leading=13, textColor=MUTED,
+        fontName="Helvetica", spaceAfter=2,
+        alignment=TA_LEFT)
+
+    s_meta = sty("meta",
+        fontSize=8, leading=11, textColor=MUTED,
+        fontName="Helvetica", spaceAfter=0)
+
+    s_sec_header = sty("sec_header",
+        fontSize=8, leading=10, textColor=GOLD,
+        fontName="Helvetica-Bold", spaceBefore=14, spaceAfter=4,
+        textTransform="uppercase", letterSpacing=0.8)
+
+    s_body = sty("body",
+        fontSize=9.5, leading=15, textColor=LIGHT,
+        fontName="Helvetica", spaceAfter=4,
+        alignment=TA_JUSTIFY)
+
+    s_footer = sty("footer",
+        fontSize=7.5, leading=10, textColor=MUTED,
+        fontName="Helvetica", alignment=TA_CENTER)
+
+    # ── Fondo oscuro (canvas callback) ────────────────────────────────────────
+    def dark_background(canvas, doc):
+        canvas.saveState()
+        canvas.setFillColor(DARK)
+        canvas.rect(0, 0, PAGE_W, PAGE_H, fill=1, stroke=0)
+        # franja dorada izquierda
+        canvas.setFillColor(GOLD)
+        canvas.rect(0, 0, 0.35*cm, PAGE_H, fill=1, stroke=0)
+        # footer line
+        canvas.setStrokeColor(colors.HexColor("#30363d"))
+        canvas.setLineWidth(0.5)
+        canvas.line(2.2*cm, 1.6*cm, PAGE_W - 2.2*cm, 1.6*cm)
+        # footer text
+        canvas.setFont("Helvetica", 7)
+        canvas.setFillColor(MUTED)
+        canvas.drawString(2.2*cm, 1.1*cm,
+            f"Qoyllur Rit'i Explorer · GraphRAG v4.0 · Nación Paucartambo · 2025")
+        canvas.drawRightString(PAGE_W - 2.2*cm, 1.1*cm,
+            f"Generado: {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+        canvas.restoreState()
+
+    # ── Contenido ─────────────────────────────────────────────────────────────
+    story = []
+
+    # Imagen del Apu (si existe)
+    img_path = None
+    for ext in ["jpg", "jpeg", "png", "webp"]:
+        for fname in ["apu", "ausangate", "qoylluriti", "imagen"]:
+            p = f"imagenes/{fname}.{ext}"
+            if os.path.exists(p):
+                img_path = p
+                break
+        if img_path:
+            break
+    # También intentar cualquier imagen en la carpeta
+    if not img_path and os.path.exists("imagenes"):
+        for f in os.listdir("imagenes"):
+            if f.lower().endswith((".jpg", ".jpeg", ".png")):
+                img_path = f"imagenes/{f}"
+                break
+
+    if img_path:
+        try:
+            img_w = PAGE_W - 4.4*cm
+            img = Image(img_path, width=img_w, height=5.5*cm)
+            img.hAlign = "LEFT"
+            # Overlay oscuro sobre imagen usando tabla
+            story.append(img)
+            story.append(Spacer(1, 0.3*cm))
+        except Exception:
+            pass
+
+    # Header: tipo + título
+    story.append(Paragraph(tipo.upper(), s_subtitle))
+    story.append(Paragraph(entidad, s_title))
+    story.append(HRFlowable(
+        width="100%", thickness=1,
+        color=colors.HexColor("#30363d"),
+        spaceAfter=6, spaceBefore=4
+    ))
+    story.append(Paragraph(
+        f"Festividad del Señor de Qoyllur Rit'i &nbsp;·&nbsp; Nación Paucartambo &nbsp;·&nbsp; Cusco, Perú",
+        s_meta
+    ))
+    story.append(Spacer(1, 0.5*cm))
+
+    # Parsear secciones del texto generado por el LLM
+    # Formato esperado: "1. DENOMINACIÓN\n...\n2. ÁMBITO\n..."
+    sections = re.split(r'\n(?=\d+\.\s+[A-ZÁÉÍÓÚÑÜ])', texto.strip())
+
+    for sec in sections:
+        sec = sec.strip()
+        if not sec:
+            continue
+        lines = sec.split('\n', 1)
+        header_line = lines[0].strip()
+        body_text   = lines[1].strip() if len(lines) > 1 else ""
+
+        # Remove leading number+dot
+        header_clean = re.sub(r'^\d+\.\s*', '', header_line)
+
+        block = []
+        block.append(Paragraph(header_clean, s_sec_header))
+        block.append(HRFlowable(
+            width="100%", thickness=0.5,
+            color=colors.HexColor("#30363d"),
+            spaceAfter=5, spaceBefore=0
+        ))
+
+        if body_text:
+            # Split bullet-style lines
+            for line in body_text.split('\n'):
+                line = line.strip()
+                if not line:
+                    continue
+                # Escape XML chars
+                line = line.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+                if line.startswith('-'):
+                    line = f"&nbsp;&nbsp;• {line[1:].strip()}"
+                block.append(Paragraph(line, s_body))
+
+        story.append(KeepTogether(block))
+
+    story.append(Spacer(1, 1*cm))
+
+    # Build
+    doc.build(story, onFirstPage=dark_background, onLaterPages=dark_background)
+    return buf.getvalue()
+
 
 # ── TTL PARSER ────────────────────────────────────────────────────────────────
 @st.cache_resource
@@ -594,13 +776,28 @@ Escribe en español formal, en tercera persona."""
             label_visibility="collapsed"
         )
 
-        st.download_button(
-            label="⬇️  Descargar ficha (.txt)",
-            data=st.session_state.ficha_generada,
-            file_name=f"ficha_{ent_sel_id}.txt",
-            mime="text/plain",
-            use_container_width=True,
-        )
+        try:
+            pdf_bytes = generar_ficha_pdf(
+                st.session_state.ficha_generada,
+                entidad=ent_sel_label,
+                tipo=tipo_sel_label
+            )
+            st.download_button(
+                label="⬇️  Descargar ficha (.pdf)",
+                data=pdf_bytes,
+                file_name=f"ficha_{ent_sel_id}.pdf",
+                mime="application/pdf",
+                use_container_width=True,
+            )
+        except Exception as e_pdf:
+            st.warning(f"PDF no disponible (instala reportlab): {e_pdf}")
+            st.download_button(
+                label="⬇️  Descargar ficha (.txt)",
+                data=st.session_state.ficha_generada,
+                file_name=f"ficha_{ent_sel_id}.txt",
+                mime="text/plain",
+                use_container_width=True,
+            )
 
 # ─────────────────────────────────────────────────────────────────────────────
 # TAB ACERCA DE
