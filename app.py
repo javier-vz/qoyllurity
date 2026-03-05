@@ -373,12 +373,18 @@ def generar_ficha_pdf(texto: str, entidad: str, tipo: str) -> bytes:
 
     if img_path:
         try:
+            from PIL import Image as PILImage
+            pil = PILImage.open(img_path)
+            orig_w, orig_h = pil.size
             img_w = PAGE_W - 4.4*cm
-            img = Image(img_path, width=img_w, height=5.5*cm)
+            img_h = img_w * orig_h / orig_w  # mantener proporcion
+            if img_h > 7*cm:
+                img_h = 7*cm
+                img_w = img_h * orig_w / orig_h
+            img = Image(img_path, width=img_w, height=img_h)
             img.hAlign = "LEFT"
-            # Overlay oscuro sobre imagen usando tabla
             story.append(img)
-            story.append(Spacer(1, 0.3*cm))
+            story.append(Spacer(1, 0.4*cm))
         except Exception:
             pass
 
@@ -395,6 +401,16 @@ def generar_ficha_pdf(texto: str, entidad: str, tipo: str) -> bytes:
         s_meta
     ))
     story.append(Spacer(1, 0.5*cm))
+
+    # Limpiar markdown del texto LLM antes de parsear
+    def strip_md(t):
+        t = re.sub(r'\*\*([^*]+)\*\*', r'\1', t)   # **bold**
+        t = re.sub(r'\*([^*]+)\*',     r'\1', t)   # *italic*
+        t = re.sub(r'^#+\s*', '', t, flags=re.MULTILINE)  # # headers
+        t = re.sub(r'^_{1,3}|_{1,3}$', '', t, flags=re.MULTILINE)
+        return t
+
+    texto = strip_md(texto)
 
     # Parsear secciones del texto generado por el LLM
     # Formato esperado: "1. DENOMINACIÓN\n...\n2. ÁMBITO\n..."
