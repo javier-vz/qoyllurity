@@ -638,30 +638,11 @@ if not groq_key:
 
 # ── TABS ──────────────────────────────────────────────────────────────────────
 st.markdown("""
-<div style="display:flex;gap:1.5rem;margin-bottom:.5rem;padding:.65rem .9rem;
-background:#161b22;border:1px solid #30363d;border-radius:8px;flex-wrap:wrap">
-  <div style="display:flex;align-items:flex-start;gap:.5rem;flex:1;min-width:160px">
-    <span style="font-size:1rem">💬</span>
-    <div>
-      <div style="font-size:.78rem;font-weight:700;color:#e6edf3">Consultas</div>
-      <div style="font-size:.72rem;color:#8b949e;line-height:1.4">Pregunta en lenguaje natural sobre la festividad</div>
-    </div>
-  </div>
-  <div style="display:flex;align-items:flex-start;gap:.5rem;flex:1;min-width:160px">
-    <span style="font-size:1rem">📋</span>
-    <div>
-      <div style="font-size:.78rem;font-weight:700;color:#e6edf3">Fichas</div>
-      <div style="font-size:.72rem;color:#8b949e;line-height:1.4">Genera fichas patrimoniales descargables en PDF</div>
-    </div>
-  </div>
-  <div style="display:flex;align-items:flex-start;gap:.5rem;flex:1;min-width:160px">
-    <span style="font-size:1rem">ℹ️</span>
-    <div>
-      <div style="font-size:.78rem;font-weight:700;color:#e6edf3">Acerca de</div>
-      <div style="font-size:.72rem;color:#8b949e;line-height:1.4">El proyecto, la ontología y el stack técnico</div>
-    </div>
-  </div>
-</div>
+<p style="font-size:.82rem;color:#8b949e;line-height:1.65;margin-bottom:.75rem">
+Explora el conocimiento documentado sobre el Señor de Qoyllur Rit'i: consulta en lenguaje
+natural sobre la festividad, genera fichas patrimoniales en PDF por entidad, o revisa
+los detalles del proyecto y la ontología.
+</p>
 """, unsafe_allow_html=True)
 
 tab_chat, tab_fichas, tab_about = st.tabs(["💬  Consultas", "📋  Fichas", "ℹ️  Acerca de"])
