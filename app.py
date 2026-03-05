@@ -85,7 +85,7 @@ code { background: #21262d !important; color: #79c0ff !important; border-radius:
 .stTextInput > div > div > input::placeholder { color: #8b949e !important; }
 .stTextInput label { color: #8b949e !important; font-size: 0.8rem !important; }
 
-/* SELECTBOX */
+/* SELECTBOX — trigger */
 .stSelectbox > div > div {
     background: #21262d !important;
     border: 1px solid #30363d !important;
@@ -93,6 +93,16 @@ code { background: #21262d !important; color: #79c0ff !important; border-radius:
     color: #e6edf3 !important;
 }
 .stSelectbox label { color: #8b949e !important; font-size: 0.8rem !important; }
+/* SELECTBOX — dropdown list (portal, fuera del árbol normal) */
+[data-baseweb="popover"] { background: #21262d !important; }
+[data-baseweb="menu"]    { background: #21262d !important; border: 1px solid #30363d !important; border-radius: 8px !important; }
+[data-baseweb="menu"] ul { background: #21262d !important; padding: 4px !important; }
+[data-baseweb="option"]  { background: #21262d !important; color: #e6edf3 !important; font-size: 0.88rem !important; border-radius: 6px !important; }
+[data-baseweb="option"]:hover,
+[data-baseweb="option"][aria-selected="true"] { background: #30363d !important; color: #e6edf3 !important; }
+/* valor seleccionado visible en el trigger */
+.stSelectbox [data-testid="stMarkdownContainer"] p { color: #e6edf3 !important; }
+.stSelectbox > div > div > div { color: #e6edf3 !important; }
 
 /* RADIO */
 .stRadio > div {
