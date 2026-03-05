@@ -637,6 +637,33 @@ if not groq_key:
     st.stop()
 
 # ── TABS ──────────────────────────────────────────────────────────────────────
+st.markdown("""
+<div style="display:flex;gap:1.5rem;margin-bottom:.5rem;padding:.65rem .9rem;
+background:#161b22;border:1px solid #30363d;border-radius:8px;flex-wrap:wrap">
+  <div style="display:flex;align-items:flex-start;gap:.5rem;flex:1;min-width:160px">
+    <span style="font-size:1rem">💬</span>
+    <div>
+      <div style="font-size:.78rem;font-weight:700;color:#e6edf3">Consultas</div>
+      <div style="font-size:.72rem;color:#8b949e;line-height:1.4">Pregunta en lenguaje natural sobre la festividad</div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:flex-start;gap:.5rem;flex:1;min-width:160px">
+    <span style="font-size:1rem">📋</span>
+    <div>
+      <div style="font-size:.78rem;font-weight:700;color:#e6edf3">Fichas</div>
+      <div style="font-size:.72rem;color:#8b949e;line-height:1.4">Genera fichas patrimoniales descargables en PDF</div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:flex-start;gap:.5rem;flex:1;min-width:160px">
+    <span style="font-size:1rem">ℹ️</span>
+    <div>
+      <div style="font-size:.78rem;font-weight:700;color:#e6edf3">Acerca de</div>
+      <div style="font-size:.72rem;color:#8b949e;line-height:1.4">El proyecto, la ontología y el stack técnico</div>
+    </div>
+  </div>
+</div>
+""", unsafe_allow_html=True)
+
 tab_chat, tab_fichas, tab_about = st.tabs(["💬  Consultas", "📋  Fichas", "ℹ️  Acerca de"])
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -785,12 +812,44 @@ Escribe en español formal, en tercera persona."""
   <span class="ficha-tag">Qoyllur Rit'i · 2025</span>
 </div>""", unsafe_allow_html=True)
 
-        st.text_area(
-            label="ficha",
-            value=st.session_state.ficha_generada,
-            height=500,
-            label_visibility="collapsed"
-        )
+        # Renderizar texto limpio (sin markdown) como HTML
+        import html as _html
+        def _render_ficha_html(texto):
+            """Convierte el texto de la ficha a HTML limpio."""
+            import re as _re
+            # Strip markdown
+            texto = _re.sub(r'\*\*([^*]+)\*\*', r'<strong>\1</strong>', texto)
+            texto = _re.sub(r'\*([^*]+)\*', r'\1', texto)
+            texto = _re.sub(r'^#+\s*', '', texto, flags=_re.MULTILINE)
+            lines = texto.strip().split('\n')
+            html_parts = []
+            for line in lines:
+                line = line.strip()
+                if not line:
+                    html_parts.append('<div style="height:.5rem"></div>')
+                    continue
+                # Section headers: "1. DENOMINACIÓN" or "**1. DENOMINACIÓN**"
+                m = _re.match(r'^(\d+\.\s+[A-ZÁÉÍÓÚÑÜ ]+)$', line.replace('<strong>','').replace('</strong>',''))
+                if m:
+                    clean = _re.sub(r'</?strong>', '', line)
+                    html_parts.append(f'<div style="font-size:.7rem;font-weight:700;color:#d4a017;text-transform:uppercase;letter-spacing:.6px;margin-top:1.1rem;margin-bottom:.3rem;padding-bottom:.25rem;border-bottom:1px solid #30363d">{_html.escape(clean)}</div>')
+                elif line.startswith('•') or line.startswith('-'):
+                    txt = _html.escape(line.lstrip('•- ').strip())
+                    html_parts.append(f'<div style="font-size:.86rem;color:#adbac7;line-height:1.65;padding-left:1rem">• {txt}</div>')
+                else:
+                    txt = line  # already has <strong> tags if needed
+                    # escape everything except allowed tags
+                    txt = _re.sub(r'<strong>(.*?)</strong>', lambda m: '<b>'+_html.escape(m.group(1))+'</b>', txt)
+                    txt = _html.escape(txt).replace('&lt;b&gt;', '<b>').replace('&lt;/b&gt;', '</b>')
+                    html_parts.append(f'<div style="font-size:.86rem;color:#adbac7;line-height:1.7">{txt}</div>')
+            return ''.join(html_parts)
+
+        ficha_html = _render_ficha_html(st.session_state.ficha_generada)
+        st.markdown(f'''
+<div style="background:#161b22;border:1px solid #30363d;border-radius:10px;
+padding:1.25rem 1.35rem;margin-bottom:.75rem">
+{ficha_html}
+</div>''', unsafe_allow_html=True)
 
         try:
             pdf_bytes = generar_ficha_pdf(
