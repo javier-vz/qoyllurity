@@ -347,7 +347,9 @@ class GraphRAG_v4_API(GraphRAG_v2):
                 ],
                 max_tokens=Config.MAX_TOKENS,
                 temperature=Config.TEMPERATURE,
-                top_p=Config.TOP_P
+                top_p=Config.TOP_P,
+                reasoning_effort="low",
+                include_reasoning=False
             )
             
             respuesta = response.choices[0].message.content.strip()

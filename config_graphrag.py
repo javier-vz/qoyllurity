@@ -246,11 +246,13 @@ class Config:
     MAX_RELACIONES = 4            # Máximo de tipos de relaciones por entidad (aumentado)
     MAX_OBJETOS_POR_REL = 3       # Máximo de objetos por tipo de relación (aumentado)
     
+    
     # Parámetros del LLM
-    MODELO_GROQ = "llama-3.3-70b-versatile"  # Modelo a usar
-    MAX_TOKENS = 350                          # Máximo de tokens en respuesta (aumentado)
-    TEMPERATURE = 0.0                         # Temperatura (0 = determinístico)
-    TOP_P = 0.1                               # Top-p sampling
+    MODELO_GROQ = "openai/gpt-oss-120b"
+    MAX_TOKENS = 1200
+    TEMPERATURE = 0.0
+    TOP_P = 1.0
+
     
     # Validación de respuestas
     FRASES_PROHIBIDAS = [

@@ -772,12 +772,18 @@ Escribe en español formal, en tercera persona."""
             try:
                 from groq import Groq
                 client = Groq(api_key=groq_key)
+                
                 resp = client.chat.completions.create(
-                    model="llama-3.3-70b-versatile",
-                    messages=[{"role": "user", "content": prompt}],
+                    model="openai/gpt-oss-120b",
+                    messages=[
+                        {"role": "user", "content": prompt}
+                    ],
                     temperature=0.3,
-                    max_tokens=1200,
+                    max_tokens=2000,
+                    reasoning_effort="low",
+                    include_reasoning=False,
                 )
+
                 ficha_texto = resp.choices[0].message.content
                 st.session_state.ficha_generada  = ficha_texto
                 st.session_state.ficha_entidad   = ent_sel_label
